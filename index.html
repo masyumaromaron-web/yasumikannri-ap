@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3498db">
+<meta charset="UTF-8">
+<title>休み管理アプリ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* --- 全体レイアウト --- */
+body {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  background: #f9fafb;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #2c3e50;
+}
+h2 {
+  margin-top: 1.5rem;
+  font-size: 1.4rem;
+  border-left: 6px solid #3498db;
+  padding-left: 10px;
+  color: #2c3e50;
+}
+
+/* --- フォーム --- */
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+form label {
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+}
+form input,
+form select,
+form button {
+  padding: 6px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+form button {
+  background: #3498db;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+form button:hover { background: #2980b9; }
+
+/* --- 日付スクロール --- */
+.date-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 8px 0;
+}
+.date-scroll button {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s;
+}
+.date-scroll button:hover { background: #f0f8ff; }
+.date-scroll::-webkit-scrollbar { height: 6px; }
+.date-scroll::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 3px;
+}
+
+/* --- テーブル --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: center;
+}
+table th { background: #f0f0f0; font-weight: bold; }
+table tbody tr:nth-child(even) { background: #fafafa; }
+
+/* --- 残り人数 --- */
+#remainingCount {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* --- 管理者パネル --- */
+#adminPanel {
+  margin-top: 10px;
+  padding: 10px;
+  background: #eef5ff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* --- ボタン共通アクセント --- */
+button { border-radius: 6px; transition: 0.2s; }
+button:hover { opacity: 0.9; }
+
+/* --- 種類色 --- */
+.年休 { color:blue; font-weight:bold; }
+.ファミサポ { color:green; font-weight:bold; }
+.病 { color:red; font-weight:bold; }
+.研修 { color:orange; font-weight:bold; }
+.環境教育 { color:purple; font-weight:bold; }
+.その他 { color:gray; font-weight:bold; }
+.しだい { color:gray; font-style:italic; }
+
+/* --- スマホ対応 --- */
+@media (max-width: 600px) {
+  body { padding: 10px; font-size: 0.9rem; }
+  form { grid-template-columns: 1fr; gap: 12px; }
+  form input, form select, form button { font-size: 1rem; padding: 10px; }
+  .date-scroll { gap: 4px; padding: 6px 0; }
+  .date-scroll button { padding: 8px 12px; font-size: 0.9rem; }
+  table { font-size: 0.85rem; display: block; overflow-x: auto; }
+  table th, table td { padding: 8px; }
+  #remainingCount { font-size: 1rem; }
+  #adminPanel { padding: 8px; }
+}
+</style>
+</head>
+<body>
+
+<h1>休み管理アプリ</h1>
+
+<section>
+  <h2>休み入力フォーム</h2>
+  <form id="leaveForm">
+    <label>職員番号: <input type="text" id="staffId" required></label>
+    <label>名前: <input type="text" id="name" readonly required></label>
+    <label>パスワード: <input type="password" id="staffPass" required></label>
+    <label>日付: <input type="date" id="date" required></label>
+    <label>休みの種類: 
+      <select id="leaveType" required>
+        <option value="年休">年休</option>
+        <option value="ファミサポ">ファミサポ</option>
+        <option value="病">傷病休暇</option>
+        <option value="研修">研修</option>
+        <option value="環境教育">環境教育</option>
+        <option value="その他">その他</option>
+      </select>
+    </label>
+    <label>時間帯:
+      <select id="leaveTime" required>
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+        <option value="全日">全日</option>
+      </select>
+    </label>
+    <label>時間単位（1〜3時間）:
+      <select id="leaveHours">
+        <option value="1">1時間</option>
+        <option value="2">2時間</option>
+        <option value="3">3時間</option>
+      </select>
+    </label>
+    <button type="submit">追加</button>
+  </form>
+</section>
+
+<section>
+  <h2>日付選択</h2>
+  <div class="date-scroll" id="dateScroll"></div>
+</section>
+
+<section>
+  <h2>休みリスト</h2>
+  <table id="leaveTable">
+    <thead>
+      <tr>
+        <th>番号</th>
+        <th>名前</th>
+        <th>休み種類</th>
+        <th>時間帯</th>
+        <th>時間(年休)</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <p id="remainingCount">AM: <span>10</span>人 / PM: <span>10</span>人</p>
+</section>
+
+<section>
+  <h2>管理者用設定</h2>
+  <label>パスワード: <input type="password" id="adminPass"></label>
+  <button id="adminLogin">ログイン</button>
+  <div id="adminPanel" style="display:none;">
+    <h3>日付別人数制限設定</h3>
+    <label>日付: <input type="date" id="limitDate"></label>
+    <label>上限人数（AM/PM共通）: <input type="number" id="limitNumber" value="10"></label>
+    <button id="saveLimit">保存</button>
+  </div>
+</section>
+
+<section id="personalPage" style="display:none;">
+  <h2>あなたの休みリスト</h2>
+  <table id="myLeaveList">
+    <thead>
+      <tr><th>日付</th><th>種類</th><th>時間帯</th><th>時間(年休)</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <p>残り年休: <span id="myRemaining">0</span>日</p>
+</section>
+<script>
+// --- グローバル変数 ---
+const staffInput = document.getElementById("staffId");
+const nameInput = document.getElementById("name");
+const passInput = document.getElementById("staffPass");
+let staffList = [];
+
+const form = document.getElementById("leaveForm");
+const leaveTableBody = document.querySelector("#leaveTable tbody");
+const dateInput = document.getElementById("date");
+const remainingCount = document.getElementById("remainingCount");
+const dateScroll = document.getElementById("dateScroll");
+const viewDateInput = document.createElement("input");
+viewDateInput.type = "hidden";
+
+const leaveData = {};
+const dailyMax = {};
+let currentUserName = "";
+const staffRemaining = {};
+
+// --- 個人ページ要素 ---
+const personalSection = document.getElementById("personalPage");
+const myLeaveList = document.getElementById("myLeaveList");
+const myRemaining = document.getElementById("myRemaining");
+
+// --- 管理者 ---
+const adminPass = "admin123";
+let isAdmin = false;
+const adminLoginBtn = document.getElementById("adminLogin");
+const adminPanel = document.getElementById("adminPanel");
+
+// --- localStorage 保存／読み込み ---
+function saveData() {
+  localStorage.setItem("leaveData", JSON.stringify(leaveData));
+  localStorage.setItem("dailyMax", JSON.stringify(dailyMax));
+  localStorage.setItem("staffRemaining", JSON.stringify(staffRemaining));
+}
+function loadData() {
+  const storedLeave = JSON.parse(localStorage.getItem("leaveData") || "{}");
+  const storedMax = JSON.parse(localStorage.getItem("dailyMax") || "{}");
+  const storedRemain = JSON.parse(localStorage.getItem("staffRemaining") || "{}");
+  Object.assign(leaveData, storedLeave);
+  Object.assign(dailyMax, storedMax);
+  Object.assign(staffRemaining, storedRemain);
+}
+
+// --- staff.json 読み込み ---
+fetch("staff.json")
+  .then(res => res.json())
+  .then(data => {
+    staffList = data;
+    staffList.forEach(s => {
+      if (!(s.id in staffRemaining)) staffRemaining[s.id] = 20;
+    });
+    loadData();
+    const today = new Date();
+    const isoToday = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+    viewDateInput.value = isoToday;
+    renderTable(viewDateInput.value);
+    updateRemaining(viewDateInput.value);
+  });
+
+// --- 職員番号入力で名前自動入力＆パスワードクリア ---
+staffInput.addEventListener("input", () => {
+  const staff = staffList.find(s => s.id === staffInput.value.trim());
+  nameInput.value = staff ? staff.name : "";
+  passInput.value = "";
+});
+
+// --- 管理者ログイン ---
+adminLoginBtn.addEventListener("click", () => {
+  const passInputVal = document.getElementById("adminPass").value;
+  if (passInputVal === adminPass) {
+    alert("管理者ログイン成功！");
+    adminPanel.style.display = "block";
+    isAdmin = true;
+  } else {
+    alert("パスワードが違います！");
+    isAdmin = false;
+  }
+});
+
+// 日付別人数制限保存
+document.getElementById("saveLimit").addEventListener("click", () => {
+  const date = document.getElementById("limitDate").value;
+  const limit = Number(document.getElementById("limitNumber").value);
+  if (date && limit > 0) {
+    dailyMax[date] = limit;
+    saveData(); // ←保存
+    alert(date + " の上限人数を " + limit + " に設定しました！");
+    if (viewDateInput.value === date) updateRemaining(date);
+  } else alert("日付と人数を正しく入力してください。");
+});
+
+// --- 日付制限 ---
+function setDateLimits() {
+  const today = new Date();
+  dateInput.min = today.toISOString().slice(0,10);
+  const maxDate = new Date(today.getFullYear(), today.getMonth()+3, 0);
+  dateInput.max = maxDate.toISOString().slice(0,10);
+}
+setDateLimits();
+
+// --- 横スクロール日付ボタン ---
+function generateDateButtons() {
+  dateScroll.innerHTML = "";
+  const today = new Date();
+  const maxDate = new Date(today.getFullYear(), today.getMonth()+3,0);
+  for (let d=new Date(today); d<=maxDate; d.setDate(d.getDate()+1)) {
+    const btn = document.createElement("button");
+    btn.textContent = `${d.getMonth()+1}/${d.getDate()}`;
+    const iso = d.toISOString().slice(0,10);
+    btn.addEventListener("click", ()=>{ 
+      viewDateInput.value = iso; renderTable(iso); updateRemaining(iso); 
+    });
+    dateScroll.appendChild(btn);
+  }
+}
+generateDateButtons();
+
+// --- AM/PMカウント ---
+function countTimeSlots(list){
+  let AM=0, PM=0;
+  list.forEach(item=>{
+    if(item.type!=="しだい"){
+      if(item.time==="AM") AM += item.hours || 4;
+      else if(item.time==="PM") PM += item.hours || 4;
+      else if(item.time==="全日"){ AM += 4; PM += 4; }
+    }
+  });
+  return {AM, PM};
+}
+
+// --- 残り人数更新 ---
+function updateRemaining(date){
+  const list = leaveData[date] || [];
+  const max = dailyMax[date] || 10;
+  const counts = countTimeSlots(list);
+  const AMRemain = Math.max(0, max*4 - counts.AM); // 1日8時間換算
+  const PMRemain = Math.max(0, max*4 - counts.PM);
+  remainingCount.innerHTML = `AM: <span>${AMRemain/4}</span>人 / PM: <span>${PMRemain/4}</span>人`;
+}
+
+// --- 表描画 ---
+function renderTable(date){
+  leaveTableBody.innerHTML = "";
+  const list = leaveData[date] || [];
+  list.forEach((item,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i+1}</td><td>${item.name}</td><td class="${item.type}">${item.type}</td><td>${item.time} ${item.hours? '('+item.hours+'h)':''}</td>`;
+    const tdOp = document.createElement("td");
+    if(isAdmin){
+      const delBtn = document.createElement("button");
+      delBtn.textContent="削除"; delBtn.className="deleteBtn";
+      delBtn.addEventListener("click",()=>{deleteLeave(date,i);});
+      tdOp.appendChild(delBtn);
+    } else if(item.name===currentUserName && new Date(date) >= new Date()){
+      const cancelBtn = document.createElement("button");
+      cancelBtn.textContent="取り消し"; cancelBtn.className="cancelBtn";
+      cancelBtn.addEventListener("click",()=>{deleteLeave(date,i);});
+      tdOp.appendChild(cancelBtn);
+    }
+    tr.appendChild(tdOp);
+    leaveTableBody.appendChild(tr);
+  });
+}
+
+// --- 削除処理 ---
+function deleteLeave(date,index){
+  const item = leaveData[date][index];
+  if(item.type==="年休" && item.origType==="年休") staffRemaining[staffList.find(s=>s.name===item.name).id] += item.hours || 4;
+  leaveData[date].splice(index,1);
+  saveData();
+  renderTable(date); updateRemaining(date); showPersonalPage(currentUserName);
+}
+
+// --- 休み追加 ---
+form.addEventListener("submit", e=>{
+  e.preventDefault();
+  const staff = staffList.find(s=>s.id===staffInput.value.trim());
+  if(!staff){ alert("職員番号が正しくありません"); return; }
+  if(passInput.value!==staff.password){ alert("パスワードが正しくありません"); return; }
+
+  const name = nameInput.value; currentUserName = name;
+  const date = dateInput.value;
+  const type = document.getElementById("leaveType").value;
+  const time = document.getElementById("leaveTime").value;
+  const hours = Number(document.getElementById("leaveHours")?.value || 4); // 1～3時間を選択
+
+  if(!leaveData[date]) leaveData[date]=[];
+
+  // 年休残数チェック
+  if(type==="年休" && staffRemaining[staff.id]<hours){ alert("残り年休が足りません！"); return; }
+
+  // 同じ日に重複防止
+  if(leaveData[date].some(item=>item.name===name && item.type!=="しだい")){
+    alert("同じ人が同じ日に登録済みです"); return;
+  }
+
+  const max = dailyMax[date]||10;
+  const counts = countTimeSlots(leaveData[date]);
+  let actualType = type;
+  if((time==="AM" && counts.AM>=max*4) || (time==="PM" && counts.PM>=max*4) || (time==="全日" && (counts.AM>=max*4||counts.PM>=max*4))){
+    actualType="しだい";
+  }
+
+  leaveData[date].push({name,type:actualType,time,hours,origType:type});
+  if(type==="年休") staffRemaining[staff.id] -= hours;
+
+  saveData();
+  renderTable(date); updateRemaining(date); showPersonalPage(name);
+  form.reset();
+});
+
+// --- 個人ページ表示 ---
+function showPersonalPage(userName){
+  personalSection.style.display="block";
+  myLeaveList.innerHTML="";
+  for(const date in leaveData){
+    leaveData[date].forEach(item=>{
+      if(item.name===userName){
+        const tr = document.createElement("tr");
+        tr.innerHTML=`<td>${date}</td><td>${item.type}</td><td>${item.time} ${item.hours? '('+item.hours+'h)':''}</td>`;
+        myLeaveList.appendChild(tr);
+      }
+    });
+  }
+  const staff = staffList.find(s=>s.name===userName);
+  if(staff) myRemaining.textContent = `年休残数: ${staffRemaining[staff.id]}`;
+}
+
+// --- 初期表示 ---
+renderTable(viewDateInput.value);
+updateRemaining(viewDateInput.value);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+  .then(() => console.log('Service Worker 登録成功'))
+  .catch((err) => console.log('Service Worker 登録失敗:', err));
+}
+</script>
+</body>
+</html>
