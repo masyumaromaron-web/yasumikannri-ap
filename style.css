@@ -1,116 +1,19 @@
-/* 全体レイアウト */
-body {
-  font-family: "Helvetica Neue", Arial, sans-serif;
-  background: #f9fafb;
-  margin: 0;
-  padding: 20px;
-  color: #333;
-}
 
-/* 見出し */
-h1 {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  color: #2c3e50;
-}
-h2 {
-  margin-top: 1.5rem;
-  font-size: 1.4rem;
-  border-left: 6px solid #3498db;
-  padding-left: 10px;
-  color: #2c3e50;
-}
-
-/* フォーム */
-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
-  margin-bottom: 15px;
-}
-form label {
-  font-size: 0.9rem;
-  display: flex;
-  flex-direction: column;
-}
-form input,
-form select,
-form button {
-  padding: 6px;
-  font-size: 0.9rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-form button {
-  background: #3498db;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-form button:hover {
-  background: #2980b9;
-}
-
-/* 日付スクロール */
-.date-scroll {
-  display: flex;
-  overflow-x: auto;
-  gap: 6px;
-  padding: 8px 0;
-}
-.date-scroll button {
-  padding: 6px 10px;
-  font-size: 0.85rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.date-scroll button:hover {
-  background: #f0f8ff;
-}
-.date-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-.date-scroll::-webkit-scrollbar-thumb {
-  background: #bbb;
-  border-radius: 3px;
-}
-
-/* テーブル */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 0.9rem;
-}
-table th, table td {
-  border: 1px solid #ddd;
-  padding: 6px 8px;
-  text-align: center;
-}
-table th {
-  background: #f0f0f0;
-  font-weight: bold;
-}
-table tbody tr:nth-child(even) {
-  background: #fafafa;
-}
-
-/* 残り人数 */
-#remainingCount {
-  margin-top: 10px;
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-/* 管理者パネル */
-#adminPanel {
-  margin-top: 10px;
-  padding: 10px;
-  background: #eef5ff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
+body { font-family:"Helvetica Neue",Arial,sans-serif; background:#f9fafb; margin:0; padding:20px; color:#333; }
+h1 { font-size:1.8rem; margin-bottom:1rem; text-align:center; color:#2c3e50; }
+h2 { margin-top:1.5rem; font-size:1.4rem; border-left:6px solid #3498db; padding-left:10px; color:#2c3e50; }
+form { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin-bottom:15px; }
+form label { font-size:0.9rem; display:flex; flex-direction:column; }
+form input, form select, form button { padding:6px; font-size:0.9rem; border:1px solid #ccc; border-radius:4px; }
+form button { background:#3498db; color:white; border:none; cursor:pointer; }
+form button:hover { background:#2980b9; }
+.date-scroll { display:flex; overflow-x:auto; gap:6px; padding:8px 0; }
+.date-scroll button { padding:6px 10px; font-size:0.85rem; border:1px solid #ccc; border-radius:4px; background:white; cursor:pointer; white-space:nowrap; }
+.date-scroll button:hover { background:#f0f8ff; }
+.date-scroll::-webkit-scrollbar { height:6px; }
+.date-scroll::-webkit-scrollbar-thumb { background:#bbb; border-radius:3px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; font-size:0.9rem; }
+table th, table td { border:1px solid #ddd; padding:6px 8px; text-align:center; }
+table th { background:#f0f0f0; font-weight:bold; }
+table tbody tr:nth-child(even) { background:#fafafa; }
+#remainingCount { margin-top:10px; font-weight:bold; color:#2c3e50; }
