@@ -49,15 +49,18 @@ generateDateButtons();
 
 // --- AM/PMカウント ---
 function countTimeSlots(list){
-  let AM=0, PM=0;
-  list.forEach(item=>{
-    if(item.type!=="しだい"){
-      if(item.time==="AM") AM+=item.hours;
-      else if(item.time==="PM") PM+=item.hours;
-      else if(item.time==="全日"){ AM+=8; PM+=8; }
+  let AM = 0, PM = 0;
+  list.forEach(item => {
+    if(item.type !== "しだい"){
+      if(item.time === "AM") AM += 1;
+      else if(item.time === "PM") PM += 1;
+      else if(item.time === "全日"){ 
+        AM += 1;  // 全日を1枠としてカウント
+        PM += 1;
+      }
     }
   });
-  return {AM, PM};
+  return { AM, PM };
 }
 
 // --- 残数更新 ---
@@ -122,6 +125,22 @@ form.addEventListener("submit", e=>{
   fetch(GAS_URL,{ method:"POST", body:JSON.stringify({date,name,type,time,hours})})
     .then(res=>res.json())
     .then(d=>console.log(d));
+// --- 管理者ログインボタン処理を追加 ---
+const adminPassInput = document.getElementById("adminPass");
+const adminLoginBtn = document.getElementById("adminLoginBtn");
+
+adminLoginBtn.addEventListener("click", () => {
+  const pass = adminPassInput.value.trim();
+  adminLogin(pass);
+
+  // 管理者モードのUI強調（任意）
+  if (isAdmin) {
+    document.body.style.background = "#eef7ff"; // 背景を淡い青に
+    adminLoginBtn.textContent = "管理者モード中";
+    adminLoginBtn.disabled = true; // ボタンを無効化
+  }
+});
+
 
   form.reset();
 });
